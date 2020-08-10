@@ -3,6 +3,7 @@ package ro
 import (
 	"context"
 	"errors"
+	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 	"sync"
 
 	"github.com/go-redis/redis"
@@ -10,7 +11,7 @@ import (
 
 var (
 	_globalRedis *redis.ClusterClient
-	_globalOnce  sync.Once
+	_globalMutex sync.RWMutex
 	_conf        *Config
 )
 
@@ -28,7 +29,8 @@ type Config struct {
 func MustGetRedis(ctx context.Context) *redis.ClusterClient {
 	client, err := GetRedis(ctx)
 	if err != nil {
-		panic("get db context failed")
+		log.Error(ctx, "Get redis failed", log.Err(err))
+		panic("get redis failed")
 	}
 
 	return client
@@ -36,32 +38,28 @@ func MustGetRedis(ctx context.Context) *redis.ClusterClient {
 }
 
 func GetRedis(ctx context.Context) (*redis.ClusterClient, error) {
-	var err error
-	_globalOnce.Do(func() {
-		var client *redis.ClusterClient
-		//Create new redis cluster client
-		client = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:        _conf.Addrs,
-			Password:     _conf.Password,
-			PoolSize:     _conf.PoolSize,
-			MinIdleConns: _conf.MinIdleConns,
-		})
+	_globalMutex.Lock()
+	defer _globalMutex.Unlock()
 
-		//Try to ping redis server
-		_, err := client.Ping().Result()
-		if err != nil {
-			return
-		}
+	if _globalRedis != nil {
+		return _globalRedis, nil
+	}
 
-		_globalRedis = client
+	//Create new redis cluster client
+	client := redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:        _conf.Addrs,
+		Password:     _conf.Password,
+		PoolSize:     _conf.PoolSize,
+		MinIdleConns: _conf.MinIdleConns,
 	})
+
+	//Try to ping redis server
+	_, err := client.Ping().Result()
 	if err != nil {
+		log.Error(ctx, "Connect to redis failed", log.Err(err))
 		return nil, err
 	}
-	if _globalRedis == nil {
-		return nil, ErrClientIsNil
-	}
-
+	_globalRedis = client
 	return _globalRedis, nil
 }
 
