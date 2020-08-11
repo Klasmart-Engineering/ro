@@ -1,4 +1,4 @@
-module calmisland/ro
+module gitlab.badanamu.com.cn/calmisland/ro
 
 go 1.14
 

@@ -8,7 +8,7 @@ import (
 
 func TestConnectRedisCluster(t *testing.T){
 	SetConfig(&Config{
-		Addrs:        []string{"kidsloop-test.bxypks.clustercfg.apn2.cache.amazonaws.com:6379"},
+		Addrs:        []string{"test-redis.bxypks.ng.0001.apn2.cache.amazonaws.com:6379"},
 		Password:     "",
 		PoolSize:     10,
 		MinIdleConns: 4,
