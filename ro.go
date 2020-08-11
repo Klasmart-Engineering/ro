@@ -12,11 +12,12 @@ import (
 var (
 	_globalRedis *redis.ClusterClient
 	_globalMutex sync.RWMutex
-	_conf        *Config
+	_conf        *redis.ClusterOptions
 )
 
 var (
 	ErrClientIsNil = errors.New("global redis is nil")
+	ErrConfIsNil = errors.New("conf is nil")
 )
 
 type Config struct {
@@ -45,13 +46,12 @@ func GetRedis(ctx context.Context) (*redis.ClusterClient, error) {
 		return _globalRedis, nil
 	}
 
+	if _conf == nil {
+		log.Error(ctx, "Config is nil", log.Err(ErrConfIsNil))
+		return nil, ErrConfIsNil
+	}
 	//Create new redis cluster client
-	client := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:        _conf.Addrs,
-		Password:     _conf.Password,
-		PoolSize:     _conf.PoolSize,
-		MinIdleConns: _conf.MinIdleConns,
-	})
+	client := redis.NewClusterClient(_conf)
 
 	//Try to ping redis server
 	_, err := client.Ping().Result()
@@ -70,6 +70,6 @@ func loadConfig() {
 	//TODO: Load config from kr or env
 }
 
-func SetConfig(c *Config) {
+func SetConfig(c *redis.ClusterOptions) {
 	_conf = c
 }
