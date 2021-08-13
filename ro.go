@@ -3,8 +3,9 @@ package ro
 import (
 	"context"
 	"errors"
-	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 	"sync"
+
+	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 
 	"github.com/go-redis/redis"
 )
@@ -17,7 +18,8 @@ var (
 
 var (
 	ErrClientIsNil = errors.New("global redis is nil")
-	ErrConfIsNil = errors.New("conf is nil")
+	ErrConfIsNil   = errors.New("conf is nil")
+	ErrKeyNotExist = redis.Nil
 )
 
 type Config struct {
