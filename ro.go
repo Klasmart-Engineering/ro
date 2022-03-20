@@ -10,7 +10,7 @@ import (
 
 var (
 	globalRedisClient *redis.Client
-	_globalMutex      sync.RWMutex
+	globalMutex       sync.RWMutex
 	globalOption      *redis.Options
 )
 
@@ -24,8 +24,8 @@ func MustGetRedis(ctx context.Context) *redis.Client {
 }
 
 func GetRedis(ctx context.Context) (*redis.Client, error) {
-	_globalMutex.Lock()
-	defer _globalMutex.Unlock()
+	globalMutex.Lock()
+	defer globalMutex.Unlock()
 
 	if globalRedisClient != nil {
 		return globalRedisClient, nil
