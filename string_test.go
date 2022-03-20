@@ -146,8 +146,9 @@ func TestStringKey_GetLocker(t *testing.T) {
 			cond.Wait()
 			defer cond.L.Unlock()
 
-			err = key.GetLocker(ctx, expiration, func(ctx context.Context) {
+			err = key.GetLocker(ctx, expiration, func(ctx context.Context) error {
 				atomic.AddInt64(&total, 1)
+				return nil
 			})
 			if err != nil {
 				t.Errorf("get locker failed due to %v", err)

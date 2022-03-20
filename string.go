@@ -152,7 +152,7 @@ func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Dura
 	return success, nil
 }
 
-func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, handler func(context.Context)) error {
+func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, handler func(context.Context) error) error {
 	got, err := k.SetNX(ctx, "", expiration)
 	if err != nil {
 		return err
@@ -167,26 +167,23 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, expiration)
 	defer cancel()
 
-	funcDone := make(chan struct{})
+	funcDone := make(chan error)
 	defer close(funcDone)
 
 	go func() {
 		defer func() {
 			if err1 := recover(); err1 != nil {
 				log.Warn(ctxWithTimeout, "handler panic", log.Any("recover error", err1))
+				funcDone <- fmt.Errorf("handler panic: %+v", err1)
 			}
-
-			funcDone <- struct{}{}
 		}()
 
 		// call handler
-		handler(ctxWithTimeout)
-
-		log.Debug(ctx, "lock handler done", log.String("key", k.key), log.Duration("expiration", expiration))
+		funcDone <- handler(ctxWithTimeout)
 	}()
 
 	select {
-	case <-funcDone:
+	case err = <-funcDone:
 		log.Debug(ctxWithTimeout, "locker handler done", log.String("key", k.key), log.Duration("expiration", expiration))
 	case <-ctxWithTimeout.Done():
 		// context deadline exceeded
@@ -208,7 +205,7 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 
 	// log.Debug(ctxWithTimeout, "release locker successfully", log.String("key", k.key), log.Duration("expiration", expiration))
 
-	return nil
+	return err
 }
 
 type StringParameterKey struct {
