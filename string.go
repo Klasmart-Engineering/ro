@@ -135,7 +135,7 @@ func (k StringKey) SetObject(ctx context.Context, obj interface{}, expiration ti
 }
 
 func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Duration) (bool, error) {
-	result, err := MustGetRedis(ctx).SetNX(ctx, k.key, value, expiration).Result()
+	success, err := MustGetRedis(ctx).SetNX(ctx, k.key, value, expiration).Result()
 	if err != nil {
 		log.Warn(ctx, "setnx key value failed",
 			log.Err(err),
@@ -144,12 +144,71 @@ func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Dura
 		return false, err
 	}
 
-	log.Debug(ctx, "setnx value successfully",
+	log.Debug(ctx, "setnx value finished",
 		log.String("key", k.key),
 		log.String("value", value),
-		log.Bool("result", result))
+		log.Bool("success", success))
 
-	return result, nil
+	return success, nil
+}
+
+func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, handler func(context.Context)) error {
+	got, err := k.SetNX(ctx, "", expiration)
+	if err != nil {
+		return err
+	}
+
+	if !got {
+		return nil
+	}
+
+	log.Debug(ctx, "get locker successfully", log.String("key", k.key), log.Duration("expiration", expiration))
+
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, expiration)
+	defer cancel()
+
+	funcDone := make(chan struct{})
+	defer close(funcDone)
+
+	go func() {
+		defer func() {
+			if err1 := recover(); err1 != nil {
+				log.Warn(ctxWithTimeout, "handler panic", log.Any("recover error", err1))
+			}
+
+			funcDone <- struct{}{}
+		}()
+
+		// call handler
+		handler(ctxWithTimeout)
+
+		log.Debug(ctx, "lock handler done", log.String("key", k.key), log.Duration("expiration", expiration))
+	}()
+
+	select {
+	case <-funcDone:
+		log.Debug(ctxWithTimeout, "locker handler done", log.String("key", k.key), log.Duration("expiration", expiration))
+	case <-ctxWithTimeout.Done():
+		// context deadline exceeded
+		err = ctxWithTimeout.Err()
+		log.Warn(ctxWithTimeout, "locker context deadline exceeded",
+			log.Err(err),
+			log.String("key", k.key),
+			log.Duration("expiration", expiration))
+	}
+
+	// err = k.Del(ctxWithTimeout)
+	// if err != nil {
+	// 	log.Warn(ctxWithTimeout, "release locker failed",
+	// 		log.Err(err),
+	// 		log.String("key", k.key),
+	// 		log.Duration("expiration", expiration))
+	// 	return err
+	// }
+
+	// log.Debug(ctxWithTimeout, "release locker successfully", log.String("key", k.key), log.Duration("expiration", expiration))
+
+	return nil
 }
 
 type StringParameterKey struct {

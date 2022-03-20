@@ -2,6 +2,7 @@ package ro
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/go-redis/redis/v8"
@@ -44,7 +45,7 @@ func GetRedis(ctx context.Context) (*redis.Client, error) {
 		return nil, err
 	}
 
-	log.Debug(ctx, "connect to redis successfully", log.Any("option", globalOption))
+	log.Debug(ctx, "connect to redis successfully", log.Any("option", fmt.Sprintf("%+v", globalOption)))
 
 	globalRedisClient = client
 	return globalRedisClient, nil

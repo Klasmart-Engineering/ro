@@ -3,6 +3,8 @@ package ro
 import (
 	"context"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -113,5 +115,59 @@ func TestStringKey_SetAndGetObject(t *testing.T) {
 
 	if !reflect.DeepEqual(get, obj) {
 		t.Errorf("get object value not equal, want %v, get %v", obj, get)
+	}
+}
+
+func TestStringKey_GetLocker(t *testing.T) {
+	ctx := context.Background()
+
+	key := NewStringKey("test5")
+	var err error
+	var total int64
+
+	N := 1000
+	running := make(chan struct{}, N)
+	defer close(running)
+
+	done := make(chan struct{}, N)
+	defer close(done)
+
+	cond := sync.NewCond(&sync.Mutex{})
+
+	expiration := time.Millisecond * 500
+	for index := 0; index < N; index++ {
+		go func() {
+			running <- struct{}{}
+			defer func() {
+				done <- struct{}{}
+			}()
+
+			cond.L.Lock()
+			cond.Wait()
+			defer cond.L.Unlock()
+
+			err = key.GetLocker(ctx, expiration, func(ctx context.Context) {
+				atomic.AddInt64(&total, 1)
+			})
+			if err != nil {
+				t.Errorf("get locker failed due to %v", err)
+			}
+		}()
+	}
+
+	for index := 0; index < N; index++ {
+		<-running
+	}
+
+	cond.L.Lock()
+	cond.Broadcast()
+	cond.L.Unlock()
+
+	for index := 0; index < N; index++ {
+		<-done
+	}
+
+	if total != 1 {
+		t.Errorf("get unexpect result, want 1, get %d", total)
 	}
 }
