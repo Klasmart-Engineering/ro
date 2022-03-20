@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 func TestStringKey_SetAndGet(t *testing.T) {
@@ -35,7 +37,7 @@ func TestStringKey_SetAndGet(t *testing.T) {
 	time.Sleep(expiration * time.Duration(2))
 
 	_, err = key.Get(ctx)
-	if err != ErrRecordNotFound {
+	if err != redis.Nil {
 		t.Errorf("string value expire failed")
 	}
 }
@@ -115,6 +117,12 @@ func TestStringKey_SetAndGetObject(t *testing.T) {
 
 	if !reflect.DeepEqual(get, obj) {
 		t.Errorf("get object value not equal, want %v, get %v", obj, get)
+	}
+
+	key1 := NewStringKey("test41")
+	err = key1.GetObject(ctx, get)
+	if err != nil && err != redis.Nil {
+		t.Errorf("get object value failed due to %v", err)
 	}
 }
 
