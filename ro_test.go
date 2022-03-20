@@ -2,19 +2,27 @@ package ro
 
 import (
 	"context"
+	"os"
 	"testing"
-	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
-func TestConnectRedisCluster(t *testing.T){
-	SetConfig(&Config{
-		Addrs:        []string{"test-redis.bxypks.ng.0001.apn2.cache.amazonaws.com:6379"},
-		Password:     "",
-		PoolSize:     10,
-		MinIdleConns: 4,
+func TestMain(m *testing.M) {
+	SetConfig(&redis.Options{
+		Addr:     "127.0.0.1:6379",
+		Username: "",
+		Password: "",
+		DB:       0,
 	})
-	client := MustGetRedis(context.Background())
-	client.Set(":mytest", "1", time.Minute * 30)
 
-	t.Log(client.Get(":mytest").String())
+	os.Exit(m.Run())
+}
+
+func TestMustGetRedis(t *testing.T) {
+	ctx := context.Background()
+	client := MustGetRedis(ctx)
+	if client == nil {
+		t.Error("MustGetRedis() get nil")
+	}
 }
