@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
@@ -21,10 +20,6 @@ func NewStringKey(key string) *StringKey {
 
 func (k StringKey) Get(ctx context.Context) (string, error) {
 	value, err := MustGetRedis(ctx).Get(ctx, k.key).Result()
-	if err == redis.Nil {
-		return "", ErrRecordNotFound
-	}
-
 	if err != nil {
 		log.Warn(ctx, "get key value failed", log.Err(err), log.String("key", k.key))
 		return "", err

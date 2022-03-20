@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-redis/redis/v8"
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
@@ -19,10 +18,6 @@ func NewHashSetKey(key string) *HashSetKey {
 
 func (k HashSetKey) HGet(ctx context.Context, field string) (string, error) {
 	value, err := MustGetRedis(ctx).HGet(ctx, k.key, field).Result()
-	if err == redis.Nil {
-		return "", ErrRecordNotFound
-	}
-
 	if err != nil {
 		log.Warn(ctx, "get field value failed",
 			log.Err(err),
