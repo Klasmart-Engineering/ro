@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
@@ -17,19 +18,22 @@ func NewHashSetKey(key string) *HashSetKey {
 }
 
 func (k HashSetKey) HGet(ctx context.Context, field string) (string, error) {
+	start := time.Now()
 	value, err := MustGetRedis(ctx).HGet(ctx, k.key, field).Result()
 	if err != nil {
 		log.Warn(ctx, "get field value failed",
 			log.Err(err),
 			log.String("key", k.key),
-			log.String("field", field))
+			log.String("field", field),
+			log.Duration("duration", time.Since(start)))
 		return "", err
 	}
 
 	log.Debug(ctx, "get field value successfully",
 		log.String("key", k.key),
 		log.String("field", field),
-		log.String("value", value))
+		log.String("value", value),
+		log.Duration("duration", time.Since(start)))
 
 	return value, nil
 }
@@ -55,18 +59,21 @@ func (k HashSetKey) HGetObject(ctx context.Context, field string, value interfac
 }
 
 func (k HashSetKey) HMGet(ctx context.Context, fields []string) (map[string]string, error) {
+	start := time.Now()
 	values, err := MustGetRedis(ctx).HMGet(ctx, k.key, fields...).Result()
 	if err != nil {
 		log.Warn(ctx, "get fields value failed",
 			log.Err(err),
-			log.String("key", k.key))
+			log.String("key", k.key),
+			log.Duration("duration", time.Since(start)))
 		return nil, err
 	}
 
 	if len(values) != len(fields) {
 		log.Warn(ctx, "result count not equal to request count",
 			log.Int("requestCount", len(fields)),
-			log.Int("resultCount", len(values)))
+			log.Int("resultCount", len(values)),
+			log.Duration("duration", time.Since(start)))
 		return nil, ErrInvalidResultCount
 	}
 
@@ -87,42 +94,49 @@ func (k HashSetKey) HMGet(ctx context.Context, fields []string) (map[string]stri
 	log.Debug(ctx, "get fields value successfully",
 		log.String("key", k.key),
 		log.Strings("fields", fields),
-		log.Any("result", result))
+		log.Any("result", result),
+		log.Duration("duration", time.Since(start)))
 
 	return result, nil
 }
 
 func (k HashSetKey) HGetAll(ctx context.Context) (map[string]string, error) {
+	start := time.Now()
 	values, err := MustGetRedis(ctx).HGetAll(ctx, k.key).Result()
 	if err != nil {
 		log.Warn(ctx, "get all fields value failed",
 			log.Err(err),
-			log.String("key", k.key))
+			log.String("key", k.key),
+			log.Duration("duration", time.Since(start)))
 		return nil, err
 	}
 
 	log.Debug(ctx, "get all fields value successfully",
 		log.String("key", k.key),
-		log.Any("result", values))
+		log.Any("result", values),
+		log.Duration("duration", time.Since(start)))
 
 	return values, nil
 }
 
 func (k HashSetKey) HSet(ctx context.Context, field, value string) error {
+	start := time.Now()
 	err := MustGetRedis(ctx).HSet(ctx, k.key, field, value).Err()
 	if err != nil {
 		log.Warn(ctx, "set value failed",
 			log.Err(err),
 			log.String("key", k.key),
 			log.String("field", field),
-			log.String("value", value))
+			log.String("value", value),
+			log.Duration("duration", time.Since(start)))
 		return err
 	}
 
 	log.Debug(ctx, "set value successfully",
 		log.String("key", k.key),
 		log.String("field", field),
-		log.String("value", value))
+		log.String("value", value),
+		log.Duration("duration", time.Since(start)))
 
 	return nil
 }
@@ -142,34 +156,40 @@ func (k HashSetKey) HDel(ctx context.Context, field ...string) error {
 		return nil
 	}
 
+	start := time.Now()
 	err := MustGetRedis(ctx).HDel(ctx, k.key, field...).Err()
 	if err != nil {
 		log.Warn(ctx, "del field failed",
 			log.Err(err),
 			log.String("key", k.key),
-			log.Strings("field", field))
+			log.Strings("field", field),
+			log.Duration("duration", time.Since(start)))
 		return err
 	}
 
 	log.Debug(ctx, "del field successfully",
 		log.String("key", k.key),
-		log.Strings("field", field))
+		log.Strings("field", field),
+		log.Duration("duration", time.Since(start)))
 
 	return nil
 }
 
 func (k HashSetKey) HLen(ctx context.Context) (int64, error) {
+	start := time.Now()
 	count, err := MustGetRedis(ctx).HLen(ctx, k.key).Result()
 	if err != nil {
 		log.Warn(ctx, "get fields count failed",
 			log.Err(err),
-			log.String("key", k.key))
+			log.String("key", k.key),
+			log.Duration("duration", time.Since(start)))
 		return 0, err
 	}
 
 	log.Debug(ctx, "get fields count  successfully",
 		log.String("key", k.key),
-		log.Int64("count", count))
+		log.Int64("count", count),
+		log.Duration("duration", time.Since(start)))
 
 	return count, nil
 }
