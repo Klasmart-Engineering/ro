@@ -19,15 +19,20 @@ func NewStringKey(key string) *StringKey {
 }
 
 func (k StringKey) Get(ctx context.Context) (string, error) {
+	start := time.Now()
 	value, err := MustGetRedis(ctx).Get(ctx, k.key).Result()
 	if err != nil {
-		log.Warn(ctx, "get key value failed", log.Err(err), log.String("key", k.key))
+		log.Warn(ctx, "get key value failed",
+			log.Err(err),
+			log.String("key", k.key),
+			log.Duration("duration", time.Since(start)))
 		return "", err
 	}
 
 	log.Debug(ctx, "get value successfully",
 		log.String("key", k.key),
-		log.String("value", value))
+		log.String("value", value),
+		log.Duration("duration", time.Since(start)))
 
 	return value, nil
 }
@@ -93,20 +98,23 @@ func (k StringKey) GetObject(ctx context.Context, obj interface{}) error {
 }
 
 func (k StringKey) Set(ctx context.Context, value string, expiration time.Duration) error {
+	start := time.Now()
 	err := MustGetRedis(ctx).Set(ctx, k.key, value, expiration).Err()
 	if err != nil {
 		log.Warn(ctx, "set key value failed",
 			log.Err(err),
 			log.String("key", k.key),
 			log.String("value", value),
-			log.Duration("expiration", expiration))
+			log.Duration("expiration", expiration),
+			log.Duration("duration", time.Since(start)))
 		return err
 	}
 
 	log.Debug(ctx, "set value successfully",
 		log.String("key", k.key),
 		log.String("value", value),
-		log.Duration("expiration", expiration))
+		log.Duration("expiration", expiration),
+		log.Duration("duration", time.Since(start)))
 
 	return nil
 }
@@ -132,13 +140,15 @@ func (k StringKey) SetObject(ctx context.Context, obj interface{}, expiration ti
 }
 
 func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Duration) (bool, error) {
+	start := time.Now()
 	success, err := MustGetRedis(ctx).SetNX(ctx, k.key, value, expiration).Result()
 	if err != nil {
 		log.Warn(ctx, "setnx key value failed",
 			log.Err(err),
 			log.String("key", k.key),
 			log.String("value", value),
-			log.Duration("expiration", expiration))
+			log.Duration("expiration", expiration),
+			log.Duration("duration", time.Since(start)))
 		return false, err
 	}
 
@@ -146,22 +156,31 @@ func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Dura
 		log.String("key", k.key),
 		log.String("value", value),
 		log.Duration("expiration", expiration),
-		log.Bool("success", success))
+		log.Bool("success", success),
+		log.Duration("duration", time.Since(start)))
 
 	return success, nil
 }
 
 func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, handler func(context.Context) error) error {
+	start := time.Now()
 	got, err := k.SetNX(ctx, "", expiration)
 	if err != nil {
 		return err
 	}
 
 	if !got {
+		log.Debug(ctx, "get locker failed",
+			log.String("key", k.key),
+			log.Duration("expiration", expiration),
+			log.Duration("duration", time.Since(start)))
 		return nil
 	}
 
-	log.Debug(ctx, "get locker successfully", log.String("key", k.key), log.Duration("expiration", expiration))
+	log.Debug(ctx, "get locker successfully",
+		log.String("key", k.key),
+		log.Duration("expiration", expiration),
+		log.Duration("duration", time.Since(start)))
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, expiration)
 	defer cancel()
