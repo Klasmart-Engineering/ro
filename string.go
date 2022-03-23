@@ -98,13 +98,15 @@ func (k StringKey) Set(ctx context.Context, value string, expiration time.Durati
 		log.Warn(ctx, "set key value failed",
 			log.Err(err),
 			log.String("key", k.key),
-			log.String("value", value))
+			log.String("value", value),
+			log.Duration("expiration", expiration))
 		return err
 	}
 
 	log.Debug(ctx, "set value successfully",
 		log.String("key", k.key),
-		log.String("value", value))
+		log.String("value", value),
+		log.Duration("expiration", expiration))
 
 	return nil
 }
@@ -135,13 +137,15 @@ func (k StringKey) SetNX(ctx context.Context, value string, expiration time.Dura
 		log.Warn(ctx, "setnx key value failed",
 			log.Err(err),
 			log.String("key", k.key),
-			log.String("value", value))
+			log.String("value", value),
+			log.Duration("expiration", expiration))
 		return false, err
 	}
 
 	log.Debug(ctx, "setnx value finished",
 		log.String("key", k.key),
 		log.String("value", value),
+		log.Duration("expiration", expiration),
 		log.Bool("success", success))
 
 	return success, nil
@@ -163,7 +167,6 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 	defer cancel()
 
 	funcDone := make(chan error)
-	defer close(funcDone)
 
 	go func() {
 		defer func() {
@@ -188,17 +191,6 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 			log.String("key", k.key),
 			log.Duration("expiration", expiration))
 	}
-
-	// err = k.Del(ctxWithTimeout)
-	// if err != nil {
-	// 	log.Warn(ctxWithTimeout, "release locker failed",
-	// 		log.Err(err),
-	// 		log.String("key", k.key),
-	// 		log.Duration("expiration", expiration))
-	// 	return err
-	// }
-
-	// log.Debug(ctxWithTimeout, "release locker successfully", log.String("key", k.key), log.Duration("expiration", expiration))
 
 	return err
 }
