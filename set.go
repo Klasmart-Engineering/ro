@@ -3,17 +3,33 @@ package ro
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
+var (
+	setKeyPool = sync.Pool{
+		New: func() interface{} {
+			return &SetKey{}
+		},
+	}
+	setParameterKeyPool = sync.Pool{
+		New: func() interface{} {
+			return SetParameterKey{}
+		},
+	}
+)
+
 type SetKey struct {
-	Key
+	*Key
 }
 
 func NewSetKey(key string) *SetKey {
-	return &SetKey{Key: Key{key: key}}
+	k := setKeyPool.Get().(*SetKey)
+	k.Key = NewKey(key)
+	return k
 }
 
 func (k SetKey) SAdd(ctx context.Context, members ...string) error {
@@ -72,6 +88,25 @@ func (k SetKey) SRem(ctx context.Context, members ...string) error {
 		log.Duration("duration", time.Since(start)))
 
 	return nil
+}
+
+func (k SetKey) SIsMember(ctx context.Context, member string) (bool, error) {
+	start := time.Now()
+	isMember, err := MustGetRedis(ctx).SIsMember(ctx, k.key, member).Result()
+	if err != nil {
+		log.Warn(ctx, "check ismember failed",
+			log.Err(err),
+			log.String("key", k.key),
+			log.Duration("duration", time.Since(start)))
+		return false, err
+	}
+
+	log.Debug(ctx, "check ismember successfully",
+		log.String("key", k.key),
+		log.Bool("isMember", isMember),
+		log.Duration("duration", time.Since(start)))
+
+	return isMember, nil
 }
 
 func (k SetKey) SMembers(ctx context.Context) ([]string, error) {
@@ -136,7 +171,9 @@ type SetParameterKey struct {
 }
 
 func NewSetParameterKey(pattern string) *SetParameterKey {
-	return &SetParameterKey{pattern: pattern}
+	k := setParameterKeyPool.Get().(*SetParameterKey)
+	k.pattern = pattern
+	return k
 }
 
 func (k SetParameterKey) Param(parameters ...interface{}) *SetKey {
