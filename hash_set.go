@@ -4,17 +4,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
+var (
+	hashSetKeyPool = sync.Pool{
+		New: func() interface{} {
+			return &HashSetKey{}
+		},
+	}
+	hashSetParameterKeyPool = sync.Pool{
+		New: func() interface{} {
+			return &HashSetParameterKey{}
+		},
+	}
+)
+
 type HashSetKey struct {
-	Key
+	*Key
 }
 
 func NewHashSetKey(key string) *HashSetKey {
-	return &HashSetKey{Key: Key{key: key}}
+	k := hashSetKeyPool.Get().(*HashSetKey)
+	k.Key = NewKey(key)
+	return k
 }
 
 func (k HashSetKey) HGet(ctx context.Context, field string) (string, error) {
@@ -199,7 +215,9 @@ type HashSetParameterKey struct {
 }
 
 func NewHashSetParameterKey(pattern string) *HashSetParameterKey {
-	return &HashSetParameterKey{pattern: pattern}
+	k := hashSetParameterKeyPool.Get().(*HashSetParameterKey)
+	k.pattern = pattern
+	return k
 }
 
 func (k HashSetParameterKey) Param(parameters ...interface{}) *HashSetKey {

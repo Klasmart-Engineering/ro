@@ -5,35 +5,38 @@ import (
 	"testing"
 )
 
-func TestSetKey_SAdd(t *testing.T) {
+func TestSetKey_All(t *testing.T) {
 	ctx := context.Background()
 
 	key := NewSetKey("test2")
 	defer key.Del(ctx)
 
-	type fields struct {
-		Key Key
+	member := "aaa"
+	err := key.SAdd(ctx, member)
+	if err != nil {
+		t.Errorf("sadd failed due to %v", err)
 	}
-	type args struct {
-		ctx     context.Context
-		members []string
+
+	found, err := key.SIsMember(ctx, member)
+	if err != nil {
+		t.Errorf("sismember failed due to %v", err)
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
+
+	if !found {
+		t.Errorf("memeber %s should be exists", member)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			k := SetKey{
-				Key: tt.fields.Key,
-			}
-			if err := k.SAdd(tt.args.ctx, tt.args.members...); (err != nil) != tt.wantErr {
-				t.Errorf("SetKey.SAdd() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = key.SRem(ctx, member)
+	if err != nil {
+		t.Errorf("srem failed due to %v", err)
+	}
+
+	found, err = key.SIsMember(ctx, member)
+	if err != nil {
+		t.Errorf("sismember failed due to %v", err)
+	}
+
+	if found {
+		t.Errorf("memeber %s should not be exists", member)
 	}
 }

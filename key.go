@@ -2,13 +2,28 @@ package ro
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
+var (
+	keyPool = sync.Pool{
+		New: func() interface{} {
+			return &Key{}
+		},
+	}
+)
+
 type Key struct {
 	key string
+}
+
+func NewKey(key string) *Key {
+	k := keyPool.Get().(*Key)
+	k.key = key
+	return k
 }
 
 func (k Key) Del(ctx context.Context) error {

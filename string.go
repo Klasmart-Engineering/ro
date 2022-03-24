@@ -5,17 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
+var (
+	stringKeyPool = &sync.Pool{
+		New: func() interface{} {
+			return &StringKey{}
+		},
+	}
+	stringParameterKeyPool = &sync.Pool{
+		New: func() interface{} {
+			return &StringParameterKey{}
+		},
+	}
+)
+
 type StringKey struct {
-	Key
+	*Key
 }
 
 func NewStringKey(key string) *StringKey {
-	return &StringKey{Key: Key{key: key}}
+	k := stringKeyPool.Get().(*StringKey)
+	k.Key = NewKey(key)
+	return k
 }
 
 func (k StringKey) Get(ctx context.Context) (string, error) {
@@ -219,7 +235,9 @@ type StringParameterKey struct {
 }
 
 func NewStringParameterKey(pattern string) *StringParameterKey {
-	return &StringParameterKey{pattern: pattern}
+	k := stringParameterKeyPool.Get().(*StringParameterKey)
+	k.pattern = pattern
+	return k
 }
 
 func (k StringParameterKey) Param(parameters ...interface{}) *StringKey {
