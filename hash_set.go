@@ -18,7 +18,7 @@ var (
 	}
 	hashSetParameterKeyPool = sync.Pool{
 		New: func() interface{} {
-			return HashSetParameterKey{}
+			return &HashSetParameterKey{}
 		},
 	}
 )

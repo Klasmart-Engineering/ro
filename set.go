@@ -17,7 +17,7 @@ var (
 	}
 	setParameterKeyPool = sync.Pool{
 		New: func() interface{} {
-			return SetParameterKey{}
+			return &SetParameterKey{}
 		},
 	}
 )
