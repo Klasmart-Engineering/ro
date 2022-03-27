@@ -202,7 +202,6 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 	defer cancel()
 
 	funcDone := make(chan error)
-
 	go func() {
 		defer func() {
 			if err1 := recover(); err1 != nil {
@@ -217,7 +216,11 @@ func (k StringKey) GetLocker(ctx context.Context, expiration time.Duration, hand
 
 	select {
 	case err = <-funcDone:
-		log.Debug(ctxWithTimeout, "locker handler done", log.String("key", k.key), log.Duration("expiration", expiration))
+		log.Debug(ctxWithTimeout, "locker handler done",
+			log.Err(err),
+			log.String("key", k.key),
+			log.Duration("expiration", expiration),
+			log.Duration("duration", time.Since(start)))
 	case <-ctxWithTimeout.Done():
 		// context deadline exceeded
 		err = ctxWithTimeout.Err()
