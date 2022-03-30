@@ -120,3 +120,7 @@ func (k Key) Exists(ctx context.Context) (bool, error) {
 
 	return exists, nil
 }
+
+func (k Key) Key() string {
+	return k.key
+}
