@@ -2,18 +2,18 @@
 
 Redis Operator is a helper, manage redis connection and provide some useful operations.
 
-
 ## Install
 
 ```
-go get gitlab.badanamu.com.cn/calmisland/ro
+go get github.com/KL-Engineering/ro
 ```
 
 ## Usage
 
 Init options before use
+
 ```
-import "gitlab.badanamu.com.cn/calmisland/ro"
+import "github.com/KL-Engineering/ro"
 
 ro.SetConfig(&redis.Options{
 	Addr:     "127.0.0.1:6379",

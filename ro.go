@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/KL-Engineering/common-log/log"
 	"github.com/go-redis/redis/v8"
-	"gitlab.badanamu.com.cn/calmisland/common-log/log"
 )
 
 var (
