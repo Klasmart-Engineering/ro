@@ -7,6 +7,7 @@ import (
 
 	"github.com/KL-Engineering/common-log/log"
 	"github.com/go-redis/redis/v8"
+	"github.com/newrelic/go-agent/v3/integrations/nrredis-v8"
 )
 
 var (
@@ -38,6 +39,7 @@ func GetRedis(ctx context.Context) (*redis.Client, error) {
 	}
 
 	client := redis.NewClient(globalOption)
+	client.AddHook(nrredis.NewHook(globalOption))
 
 	err := client.Ping(ctx).Err()
 	if err != nil {
