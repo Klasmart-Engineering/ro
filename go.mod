@@ -1,9 +1,9 @@
-module github.com/KL-Engineering/ro
+module github.com/Klasmart-Engineering/ro
 
 go 1.18
 
 require (
-	github.com/KL-Engineering/common-log v0.3.0
+	github.com/Klasmart-Engineering/common-log v0.3.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/newrelic/go-agent/v3/integrations/nrredis-v8 v0.0.0-20220519215051-c2426dfde466
 )
